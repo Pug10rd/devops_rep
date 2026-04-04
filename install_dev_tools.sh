@@ -35,4 +35,3 @@ echo "Installing Django..."
 sudo apt install python3-django
 echo "Django installed successfully"
 fi
-

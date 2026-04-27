@@ -12,6 +12,10 @@ output "vpc_id" {
   value = module.vpc.vpc_id
 }
 
+output "ecr_url" {
+  value = module.ecr.repository_url
+}
+
 output "public_subnets" {
   value = module.vpc.public_subnets
 }

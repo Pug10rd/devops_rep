@@ -4,6 +4,3 @@
 
 # Terraform working directory
 .terraform/
-
-# Terraform lock file
-.terraform.lock.hcl

@@ -1,0 +1,35 @@
+replicaCount: 2
+
+image:
+  repository: 660619595389.dkr.ecr.us-west-2.amazonaws.com/ivan-lesson-5-ecr
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+config:
+  POSTGRES_DB: "mydatabase"
+  POSTGRES_USER: "myuser"
+  POSTGRES_HOST: "db"
+  POSTGRES_PORT: "5432"
+
+secret:
+  SECRET_KEY: "django-insecure-#li^2g+98fs%hny#x0nl!2@qvj5d-s*ed6l@3qo8sewx%@c&d5"
+  POSTGRES_PASSWORD: "mypassword"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"

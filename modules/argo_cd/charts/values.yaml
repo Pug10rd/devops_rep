@@ -4,7 +4,7 @@ applications:
     project: default
     source:
       repoURL: <https://github.com/Pug10rd/devops_rep.git>
-      path: django-chart
+      path: charts/django-chart
       targetRevision: main
       helm:
         valueFiles:

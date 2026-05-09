@@ -38,8 +38,8 @@ spec:
 
         IMAGE_TAG   = "${BUILD_NUMBER}"
 
-        GIT_REPO    = "https://github.com/Pug10rd/devops_rep.git"
-        GIT_BRANCH   = "leson-8-9"
+        GIT_REPO    = "https://github.com/Pug10rd/devops_rep_config.git"
+        GIT_BRANCH   = "main"
         VALUES_FILE = "charts/django-app/values.yaml"
     }
 
@@ -98,7 +98,7 @@ spec:
                         git add ${VALUES_FILE}
                         git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes"
 
-                        git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/Pug10rd/devops_rep.git HEAD:${GIT_BRANCH}
+                        git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/Pug10rd/devops_rep_config.git HEAD:${GIT_BRANCH}
                         """
                     }
                 }

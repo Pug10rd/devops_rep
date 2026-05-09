@@ -1,232 +1,136 @@
-## Lesson 7 — Kubernetes (EKS) + Helm + Django
+Terraform Database Module (RDS & Aurora)
+This project implements a flexible and reusable Terraform module for provisioning relational databases in AWS.
 
-### Опис
+The module supports two modes:
 
-Проєкт демонструє повний DevOps-цикл розгортання Django застосунку в AWS Kubernetes (EKS) з використанням Terraform для інфраструктури, Docker для контейнеризації та Helm для деплою.
+Standard RDS instance (PostgreSQL / MySQL)
+Aurora cluster (PostgreSQL-compatible)
+The database type is controlled by a single variable: use_aurora
 
-Інфраструктура побудована модульно: VPC → EKS → ECR → Jenkins → ArgoCD, з інтеграцією Kubernetes через `helm` та `kubernetes` провайдери Terraform.
-
----
-
-## Функціональність
-
-- Створення інфраструктури AWS через Terraform (VPC, EKS, ECR)
-- Підключення до Kubernetes кластера (EKS)
-- Збірка Docker образу Django застосунку
-- Публікація Docker image в AWS ECR
-- Деплой застосунку через Helm chart
-- Використання ConfigMap для конфігурацій
-- Використання Secret для чутливих даних
-- Автоматичне масштабування (HPA)
-- Доступ до застосунку через AWS LoadBalancer
-- Інтеграція Jenkins (CI/CD pipeline)
-- Інтеграція ArgoCD (GitOps деплой)
-
----
-
-## Архітектура
-
-- **AWS VPC** — мережева інфраструктура
-- **AWS EKS** — Kubernetes кластер
-- **AWS ECR** — Docker registry
-- **Terraform** — інфраструктура як код
-- **Helm** — деплой Kubernetes ресурсів
-- **Jenkins** — CI/CD pipeline
-- **ArgoCD** — GitOps деплоймент
-- **Django** — backend застосунок
-- **AWS LoadBalancer** — зовнішній доступ до сервісу
-
----
-
-## Структура проєкту
-
-```
-.
+🚀 Features
+Conditional creation of RDS or Aurora
+Reusable Terraform module
+Clean modular architecture
+Automatic creation of:
+DB Subnet Group
+Security Group
+Parameter Group
+Minimal configuration required to switch database type
+📁 Project Structure
+Project/
+├── lesson-db-module/
+│ ├── README.md
+│ ├── backend.hcl
+│ ├── backend.tf
+│ ├── main.tf
+│ ├── outputs.tf
+│ ├── terraform.tfvars.example
+│ ├── variables.tf
+│ ├── versions.tf
+│ └── modules/
+│ ├── rds/
+│ │ ├── aurora.tf
+│ │ ├── outputs.tf
+│ │ ├── rds.tf
+│ │ ├── shared.tf
+│ │ └── variables.tf
+│ └── vpc/
+│ ├── main.tf
+│ ├── outputs.tf
+│ └── variables.tf
+│
+└── lesson-db-module-bootstrap/
+├── README.md
 ├── main.tf
-├── backend.tf
 ├── outputs.tf
 ├── variables.tf
-├── terraform.tfvars
 ├── versions.tf
-├── Dockerfile
-├── Jenkinsfile
-├── docker-compose.yml
-├── requirements.txt
-├── manage.py
-├── nginx/
-├── myproject/
-├── charts/
-│   └── django-app/
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       └── templates/
-│           ├── deployment.yaml
-│           ├── service.yaml
-│           ├── configmap.yaml
-│           ├── secret.yaml
-│           └── hpa.yaml
 └── modules/
-    ├── vpc/
-    ├── eks/
-    ├── ecr/
-    ├── jenkins/
-    ├── argo_cd/
-    └── s3-backend/
-```
+└── s3-backend/
+├── dynamodb.tf
+├── outputs.tf
+├── s3.tf
+└── variables.tf
+⚙️ Usage Example
+module "rds" {
+source = "./modules/rds"
 
----
+use_aurora = false
+engine = "postgres"
+engine_version = "16.12"
+instance_class = "db.t3.micro"
 
-## Деплой
+db_name = "appdb"
+username = "dbadmin"
+password = "YourStrongPassword"
 
-### 1. Ініціалізація Terraform
+subnet_ids = module.vpc.private_subnet_ids
+vpc_id = module.vpc.vpc_id
+}
+🔄 Switching Between RDS and Aurora
+To switch database type, change only one variable:
 
-```bash
-terraform init
-terraform plan
+RDS:
+use_aurora = false
+
+Aurora:
+use_aurora = true
+
+No other changes are required.
+
+🧩 Variables
+Variable Description Type Default
+use_aurora Enable Aurora cluster bool false
+engine Database engine string "postgres"
+engine_version Engine version string "16.12"
+instance_class Instance type string "db.t3.micro"
+db_name Database name string "appdb"
+username Master username string "dbadmin"
+password Master password string n/a
+subnet_ids Private subnet IDs list n/a
+vpc_id VPC ID string n/a
+🏗️ Created Resources
+Depending on configuration, the module creates:
+
+Common resources:
+aws_db_subnet_group
+aws_security_group
+parameter group
+RDS mode:
+aws_db_instance
+Aurora mode:
+aws_rds_cluster
+aws_rds_cluster_instance (writer)
+🧪 Testing Strategy
+RDS validation:
 terraform apply
-```
+terraform destroy
+Aurora validation:
+terraform plan
+Aurora configuration is validated using plan to avoid unnecessary cloud costs.
 
----
+⚠️ Important Notes
+Aurora is NOT included in AWS Free Tier
+It may incur additional costs even for short usage
+Always run:
+terraform destroy
+after testing
 
-### 2. Підключення до EKS
+🔧 Backend Setup
+Terraform remote state is managed using S3 and DynamoDB.
 
-```bash
-aws eks update-kubeconfig --region us-west-2 --name <cluster-name>
+Before running the main module, you must deploy the backend:
 
-kubectl get nodes
-```
+cd lesson-db-module-bootstrap
+terraform init
+terraform apply
+Then configure backend in the main module using: backend.hcl
 
----
+💡 Summary
+This project demonstrates:
 
-### 3. Встановлення metrics-server (HPA)
-
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-
----
-
-### 4. Збірка Docker image
-
-```bash
-docker build -t django-app .
-```
-
----
-
-### 5. Логін в AWS ECR
-
-```bash
-aws ecr get-login-password --region us-west-2 \
-| docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-west-2.amazonaws.com
-```
-
----
-
-### 6. Push image в ECR
-
-```bash
-docker tag django-app:latest <account-id>.dkr.ecr.us-west-2.amazonaws.com/<repo>:latest
-
-docker push <account-id>.dkr.ecr.us-west-2.amazonaws.com/<repo>:latest
-```
-
----
-
-### 7. Деплой через Helm
-
-```bash
-cd charts/django-app
-
-helm lint .
-helm install django-app .
-```
-
----
-
-### 8. Перевірка стану
-
-```bash
-kubectl get pods
-kubectl get svc
-kubectl get hpa
-kubectl top pods
-kubectl top nodes
-```
-
----
-
-## Доступ до застосунку
-
-Застосунок доступний через AWS LoadBalancer:
-
-```
-http://<loadbalancer-url>
-```
-
----
-
-## ConfigMap
-
-Використовується для не чутливих змінних середовища:
-
-- POSTGRES_DB
-- POSTGRES_USER
-- POSTGRES_HOST
-- POSTGRES_PORT
-
----
-
-## Secret
-
-Використовується для чутливих даних:
-
-- SECRET_KEY
-- POSTGRES_PASSWORD
-
----
-
-## HPA (Horizontal Pod Autoscaler)
-
-- min replicas: 2
-- max replicas: 6
-- target CPU utilization: 70%
-
----
-
-## ECR Image
-
-```
-<account-id>.dkr.ecr.us-west-2.amazonaws.com/<repository>:latest
-```
-
----
-
-## Jenkins
-
-- Автоматизація build & deploy
-- Trigger pipeline при зміні коду
-- Build Docker image → Push to ECR → Deploy via Helm
-
----
-
-## ArgoCD
-
-- GitOps підхід
-- Автоматичний sync Kubernetes manifests з Git репозиторію
-- Деплой Helm chart через ArgoCD Application
-
----
-
-## Висновок
-
-Реалізовано повний DevOps pipeline:
-
-- інфраструктура через Terraform
-- Kubernetes кластер на AWS EKS
-- CI/CD через Jenkins
-- GitOps через ArgoCD
-- контейнеризація через Docker
-- деплой через Helm
-- масштабування через HPA
-- зовнішній доступ через LoadBalancer
+Conditional infrastructure provisioning
+Reusable Terraform module design
+Separation of bootstrap and main infrastructure
+Production-style architecture
+The module can be reused across different environments with minimal changes.

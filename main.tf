@@ -23,6 +23,29 @@ provider "aws" {
   region = "us-west-2"
 }
 
+module "rds" {
+  source = "./modules/rds"
+
+  name_prefix    = "lesson-7"
+  vpc_id         = module.vpc.vpc_id
+  subnet_ids     = module.vpc.private_subnets
+
+  # RDS or Aurora toggle
+  use_aurora     = false   # set true for Aurora
+
+  engine         = "postgres"
+  engine_version = "17.2"
+  instance_class = "db.t3.micro"
+
+  db_name        = "mydb"
+  username       = "dbadmin"
+  password       = "changeme123"   # move to secrets manager later
+  port           = 5432
+
+  parameter_group_family = "postgres17"
+  allowed_cidr_blocks    = ["10.0.0.0/16"]  # your VPC CIDR
+}
+
 module "s3_backend" {
   source      = "./modules/s3-backend"
   bucket_name = "ivan-terraform-state-bucket-001001"

@@ -12,6 +12,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -117,6 +121,12 @@ module "argo_cd" {
     helm       = helm
     kubernetes = kubernetes
   }
+
+  depends_on = [module.eks]
+}
+
+module "monitoring" {
+  source = "./modules/monitoring"
 
   depends_on = [module.eks]
 }

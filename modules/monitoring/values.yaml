@@ -1,0 +1,55 @@
+prometheus:
+  server:
+    persistentVolume:
+      enabled: false
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "700m"
+        memory: "768Mi"
+
+    retention: "6h"
+
+  alertmanager:
+    enabled: false
+
+  prometheus-pushgateway:
+    enabled: false
+
+  kube-state-metrics:
+    enabled: true
+
+  prometheus-node-exporter:
+    enabled: true
+
+grafana:
+  adminUser: admin
+
+  persistence:
+    enabled: true
+    size: 4Gi
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "400m"
+      memory: "512Mi"
+
+  sidecar:
+    dashboards:
+      enabled: false
+    datasources:
+      enabled: true
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server.monitoring.svc.cluster.local
+      isDefault: true

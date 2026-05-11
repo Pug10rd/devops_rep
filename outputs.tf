@@ -43,3 +43,8 @@ output "oidc_provider_arn" {
 output "oidc_provider_url" {
   value = module.eks.oidc_provider_url
 }
+
+output "grafana_admin_password" {
+  value     = module.monitoring.grafana_admin_password
+  sensitive = true
+}
